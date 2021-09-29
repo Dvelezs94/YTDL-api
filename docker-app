@@ -1,0 +1,97 @@
+#!/bin/bash
+BASE_NAME=`echo $0 | awk -F/ '{print $NF}'`
+
+if [ "$(uname)" == "Darwin" ]; then
+  export US_ID=1000
+  export GR_ID=1000
+else
+  export US_ID=$(id -u)
+  export GR_ID=$(id -g)
+fi
+
+function build() {
+  docker-compose down -v
+  docker-compose up -d --build --force-recreate
+}
+
+function start() {
+  docker-compose up -d
+}
+
+function status() {
+  docker-compose ps
+}
+
+function stop() {
+  docker-compose down
+}
+
+function path {
+  echo "exporting path"
+  export PATH=$PATH:$(pwd)
+  echo "You can now use the CLI as a native command"
+}
+
+function logs() {
+  docker-compose logs -f --tail=50
+}
+
+function expose() {
+  ngrok http 80
+}
+
+function console() {
+  bash $BASE_NAME run rails c
+}
+
+case $1 in
+  build)
+    build
+  ;;
+  start)
+    start
+  ;;
+  status)
+    status
+  ;;
+  stop)
+    stop
+  ;;
+  run)
+    shift
+    docker-compose exec app $@
+  ;;
+  restart)
+    stop
+    start
+  ;;
+  logs)
+    logs
+  ;;
+  expose)
+    expose
+  ;;
+  routes)
+    bash $BASE_NAME run flask routes
+  ;;
+  console)
+    console
+  ;;
+  path)
+    path
+  ;;
+  *)
+    if ! command -v docker-app &> /dev/null;then
+      path
+    fi
+    echo "Usage:
+    $BASE_NAME build               You will need this if you want to build from scratch
+    $BASE_NAME routes              Print flask routes
+    $BASE_NAME status              check containers status
+    $BASE_NAME start/stop          Start the project by using docker-compose
+    $BASE_NAME restart             restart
+    $BASE_NAME logs                Tail logs
+    $BASE_NAME run command here    Run any command inside the container
+    $BASE_NAME expose              expose with ngrok on port 80"
+  ;;
+esac
