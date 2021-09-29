@@ -1,7 +1,7 @@
 FROM python:3.7-alpine
 
-# this is so scim user can run sudo
-RUN apk add sudo supervisor
+# this is so scim user can run sudo and sqlalchemy build
+RUN apk add sudo supervisor gcc build-base postgresql-dev
 
 # Create app user for correct file permissions
 ARG US_ID=1000

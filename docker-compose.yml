@@ -9,31 +9,27 @@ services:
         ports:
             - "8000:8000"
         environment:
-            FLASK_DEBUG: 1
-            FLASK_APP: app.py
             DB_USERNAME: postgres
             DB_HOST: postgres_db
             DB_PASSWORD: dbpass
-            DB_NAME: scim
-        # depends_on: 
-        #     - scim_db
-        #     - mdm_db
-        #     - postgres_db
+            DB_NAME: ytdl
+        depends_on: 
+            - postgres_db
 
-    # postgres_db:
-    #     image: postgres:12
-    #     environment:
-    #         POSTGRES_USER: postgres
-    #         POSTGRES_PASSWORD: dbpass
-    #         POSTGRES_DB: scim
+    postgres_db:
+        image: postgres:12
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: dbpass
+            POSTGRES_DB: ytdl
 
-    #     volumes:
-    #         - postgres-volume:/var/lib/postgresql/data
+        volumes:
+            - postgres-volume:/var/lib/postgresql/data
 
-    # adminer:
-    #     image: adminer
-    #     ports:
-    #         - 8080:8080
+    adminer:
+        image: adminer
+        ports:
+            - 8082:8080
 
 volumes:
     postgres-volume:
