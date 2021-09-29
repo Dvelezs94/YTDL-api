@@ -1,3 +1,6 @@
 *.log
 *.pid
 *pycache*
+tmp/*
+.secrets
+.DS_STORE

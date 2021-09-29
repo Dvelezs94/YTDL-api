@@ -9,6 +9,7 @@ services:
         ports:
             - "8000:8000"
         environment:
+            LOCAL_ENV: 'true'
             DB_USERNAME: postgres
             DB_HOST: postgres_db
             DB_PASSWORD: dbpass

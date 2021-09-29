@@ -2,7 +2,7 @@ import logging
 import uuid
 
 import SQLmodels as SQLmodels
-from models.video import Video
+from models.video import VideoModel
 from sqlalchemy import exc
 from core.Initializer import db_inst
 
@@ -13,9 +13,10 @@ db = db_inst.SessionLocal()
 db_video = SQLmodels.Videos
 
 # User "Pydantic" instantiation
-video = Video()
+video = VideoModel()
 
 class VideoDBFunctions():
+    
     def __init__(self):
         return
 
@@ -24,3 +25,8 @@ class VideoDBFunctions():
 
     def get_videos(self, skip: int = 0, limit: int = 100):
         return db.query(db_video).offset(skip).limit(limit).all()
+
+    def create_video(self, video_url: str):
+        downloaded_video = video.download_as_mp3(video_url = video_url)
+        logging.info(downloaded_video)
+        return "Video Downloaded!"
