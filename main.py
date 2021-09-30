@@ -1,12 +1,13 @@
 from typing import Any, Dict
-from helpers.video_db_functions import VideoDBFunctions
+from controllers.video import Video
 from core.Initializer import db_inst
 import SQLmodels as SQLmodels
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import JSONResponse
 import logging
 
 app = FastAPI()
-video_db = VideoDBFunctions()
+video_db = Video()
 
 logging.basicConfig(level=logging.DEBUG)
 # Run "migrations"
@@ -14,10 +15,10 @@ SQLmodels.db_inst.Base.metadata.create_all(bind=db_inst.engine)
 
 @app.get("/")
 def read_root():
-    return {"data": "Hello World"}
+    return {"data": "I'm working"}
 
 
-@app.post("/new_video/")
+@app.post("/video/", status_code=status.HTTP_201_CREATED)
 async def process_video(request: Dict[Any, Any]): # body param
-    video_db.create_video(video_url = request["video_src"])
-    return {"data": "video processing"}
+    resp = video_db.create_video(video_url = request["video_src"])
+    return resp
