@@ -14,6 +14,6 @@ terraform {
 
 module "ytdl" {
   source      = "../modules/"
-  environment = var.environment
-  region      = var.region
+  environment = "production"
+  region      = "us-east-1"
 }

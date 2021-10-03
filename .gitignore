@@ -4,3 +4,6 @@
 tmp/*
 .secrets
 .DS_STORE
+.terraform*
+.serverless*
+node_modules/

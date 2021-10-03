@@ -62,13 +62,12 @@ data "sops_external" "sops" {
 }
 
 module "lambda_serverless" {
-  source = "git::git@github.com:contextmedia/terraform-infrastructure-live.git//modules/lambda_serverless"
+  source = "./lambda"
 
-  app_name        = "scim"
+  app_name        = "ytdl"
   environment     = var.environment
   region          = var.region
   iam_role_policy = data.aws_iam_policy_document.lambda_role_policy.json
-  department      = "devops"
   secrets_part_1 = {
     DB_USERNAME  = data.sops_external.sops.data.db_username
     DB_HOST      = data.sops_external.sops.data.db_host

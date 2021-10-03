@@ -1,13 +1,17 @@
 service: ytdl
 frameworkVersion: '2'
 
+package:
+  individually: true
+
 custom:
-  wsgi:
-    app: app.app
-    pythonBin: python3
-    packRequirements: false
   pythonRequirements:
-    dockerizePip: non-linux
+    dockerizePip: true
+    layer:
+      name: ytdl-layer
+      description: YTDL layer
+      compatibleRuntimes:
+        - python3.7
   local:
     region: none
     deployment_bucket: none
@@ -20,17 +24,17 @@ custom:
     region: us-east-1
     deployment_bucket: ytdl-lambdas
     vpc:
-      securityGroupId1: sg-e571b49a
-      subnetId1: subnet-0f4647a2d6a82a522
+      securityGroupId1: sg-0fc022e9d1da3b50c
+      subnetId1: subnet-bcd6018d
     environment:
       local: false
 
 provider:
   name: aws
-  stage: ${opt:stage, 'local'}
+  stage: ${opt:stage, 'production'}
   runtime: python3.7
   region: ${self:custom.${self:provider.stage}.region}
-  role: arn:aws:iam::#{AWS::AccountId}:role/${self:provider.stage}_ytdl_role
+  role: arn:aws:iam::696716568292:role/${self:provider.stage}_ytdl_role
   deploymentBucket:
     name: ${self:custom.${self:provider.stage}.deployment_bucket}
     serverSideEncryption: AES256
@@ -45,22 +49,40 @@ provider:
 functions:
   app:
     name: ${self:provider.stage}-ytdl
-    handler: wsgi.handler
+    timeout: 30
+    package:
+      include:
+        - "main.py"
+      exclude:
+        - "requirements.txt"
+        - "package.json"
+        - "package-lock.json"
+        - ".serverless/**"
+        - ".virtualenv/**"
+        - "node_modules/**"
+        - terraform/**
+        - .secret*
+        - venv/**
+        - supervisor*
+        - docker*
+        - Docker*
+        - entrypoint*
+    handler: app.handler
     events:
       - http: ANY /
       - http: 'ANY /{proxy+}'
     environment:
+      STAGE: ${self:provider.stage}
       SECRETS_NAME_BASE: ${self:provider.stage}/ytdl/all
       LOCAL_ENV: ${self:custom.${self:provider.stage}.environment.local}
+      DB_USERNAME: ytdl_prod
+      DB_PASSWORD: E3306654yt56
+      DB_HOST: ytdl-prod.c8z5ktln0ikb.us-east-1.rds.amazonaws.com
+      DB_NAME: ytdl
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+  
       
 plugins:
-  - serverless-wsgi
   - serverless-python-requirements
   - serverless-local-environment
-
-package:
-  exclude:
-    - node_modules/**
-    - venv/**
-    - terraform/**
-    - .secret

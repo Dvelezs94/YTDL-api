@@ -21,7 +21,7 @@ MAX_SECRETS = 20
 
 
 class SecretsManager(object):
-    def __init__(self, secret_name_base, region=""):
+    def __init__(self, secret_name_base, region="us-east-1"):
         self.secret_name = secret_name_base
         self.session = boto3.session.Session()
         if region is not "":

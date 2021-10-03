@@ -9,5 +9,3 @@ variable "environment" {}
 variable "department" {
   default = "devops"
 }
-
-variable "lambda_function_name" {}
