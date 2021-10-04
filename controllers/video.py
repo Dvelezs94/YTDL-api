@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 import logging
 import cgi
 import os
+import glob2
 import youtube_dl
 import boto3
 import SQLmodels as SQLmodels
@@ -105,45 +106,40 @@ class Video():
             raise HTTPException(status_code=500, detail="Failed fetching video information")
 
     def __download_video_as_mp3(self, video_url: str):
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
-            'verbose': True,
-            'progress_hooks': [self.__upload_to_s3_hook]
-        }
+        tmp_dir=f"/tmp/{self.__video_metadata['id']}"
+        os.mkdir(tmp_dir)
         logging.info("Starting video download")
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        try: 
             if not self.__video_metadata['duration'] >= 1800: # this means video is over 10 mins long
-                ydl.download([video_url])
+                stream = os.popen(f"youtube2mp3 -y '{video_url}' -d {tmp_dir}")
+                stream.read()
+                self.__video_metadata['file_path'] = glob2.glob(f"{tmp_dir}/*.mp3")[0]
+                self.__upload_to_s3()
                 return True
             else:
                 raise HTTPException(status_code=500, detail="Video is over 30 minutes long")
+        except:
+            raise HTTPException(status_code=500, detail="Error while downloading video")
 
-    def __upload_to_s3_hook(self, vid):
-        # upload video once it has finished downloading
-        if vid['status'] == 'finished':
-            logging.critical(f"Uploading {vid['filename']} to S3")
-            if os.getenv('AWS_ACCESS_KEY'):
-                s3 = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
-                      aws_secret_access_key=os.getenv('AWS_SECRETS_KEY'), 
-                      region_name=os.getenv('AWS_REGION'))
-            else:
-                s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
+    def __upload_to_s3(self):
+        logging.critical(f"Uploading {self.__video_metadata['title']} to S3")
+        if os.getenv('AWS_ACCESS_KEY'):
+            s3 = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
+                    aws_secret_access_key=os.getenv('AWS_SECRETS_KEY'), 
+                    region_name=os.getenv('AWS_REGION'))
+        else:
+            s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
 
-            try:
-                s3.upload_file(vid['filename'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['id']}.mp3", ExtraArgs={'ACL':'public-read'})
-                logging.info(f"{vid['filename']} Upload Successful")
-                return True
-            except FileNotFoundError:
-                logging.error(f"{vid['filename']} not found")
-                raise HTTPException(status_code=500, detail="Unexpected Error")
-            except NoCredentialsError:
-                logging.error("AWS Credentials not found")
-                raise HTTPException(status_code=500, detail="Internal Server Error")
+        try:
+            s3.upload_file(self.__video_metadata['file_path'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['filename']}.mp3", ExtraArgs={'ACL':'public-read'})
+            logging.info(f"{self.__video_metadata['id']} Upload Successful")
+            return True
+        except FileNotFoundError:
+            logging.error(f"{self.__video_metadata['file_path']} not found")
+            raise HTTPException(status_code=500, detail="Unexpected Error")
+        except NoCredentialsError:
+            logging.error("AWS Credentials not found")
+            raise HTTPException(status_code=500, detail="Internal Server Error")
     
     def __get_video_s3_url(self):
         # return link for video download on s3/cdn

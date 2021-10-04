@@ -7,6 +7,7 @@ greenlet==1.1.2
 h11==0.12.0
 importlib-metadata==4.8.1
 jmespath==0.10.0
+mutagen==1.45.1
 psycopg2-binary==2.8.2
 pydantic==1.8.2
 python-dateutil==2.8.2
@@ -18,5 +19,7 @@ starlette==0.14.2
 typing-extensions==3.10.0.2
 urllib3==1.26.7
 uvicorn==0.15.0
-youtube-dl==2021.1.24.1
+youtube-dl==2021.6.6
+youtube2mp3==1.4.0
 zipp==3.6.0
+glob2==0.7
