@@ -26,7 +26,7 @@ def read_root():
 
 
 @app.post("/video", status_code=status.HTTP_201_CREATED)
-async def process_video(request: Dict[Any, Any]): # body param
+def process_video(request: Dict[Any, Any]): # body param
     resp = video_db.create_video(video_url = request["video_src"])
     return resp
 
