@@ -112,16 +112,15 @@ class Video():
         if not os.path.isdir(tmp_dir):
             os.mkdir(tmp_dir)
         logging.info("Starting video download")
+        if self.__video_metadata['duration'] >= 1800:
+            raise HTTPException(status_code=500, detail="Video is over 30 minutes long")
         try: 
-            if not self.__video_metadata['duration'] >= 1800: # this means video is over 10 mins long
-                stream = os.popen(f"youtube2mp3 -y '{video_url}' -d {tmp_dir}")
-                stream.read()
-                logging.info("=== Download and transcode finished")
-                self.__video_metadata['file_path'] = glob2.glob(f"{tmp_dir}/*.mp3")[0]
-                self.__upload_to_s3()
-                return True
-            else:
-                raise HTTPException(status_code=500, detail="Video is over 30 minutes long")
+            stream = os.popen(f"youtube2mp3 -y '{video_url}' -d {tmp_dir}")
+            stream.read()
+            logging.info("=== Download and transcode finished")
+            self.__video_metadata['file_path'] = glob2.glob(f"{tmp_dir}/*.mp3")[0]
+            self.__upload_to_s3()
+            return True
         except:
             raise HTTPException(status_code=500, detail="Error while downloading video")
 
