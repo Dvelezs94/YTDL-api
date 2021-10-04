@@ -113,9 +113,6 @@ class Video():
                 'preferredcodec': 'mp3',
                 'preferredquality': '128',
             }],
-            'postprocessor_args': [
-            '   -ar', '16000'
-            ],
             'prefer_ffmpeg': True,
             'restrictfilenames': True,
             'progress_hooks': [self.__upload_to_s3_hook]
