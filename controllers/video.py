@@ -106,15 +106,13 @@ class Video():
 
     def __download_video_as_mp3(self, video_url: str):
         ydl_opts = {
-            'outtmpl': "/tmp/%(title)s.mp3",
             'format': 'bestaudio/best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '128',
+                'preferredquality': '192',
             }],
-            'prefer_ffmpeg': True,
-            'restrictfilenames': True,
+            'verbose': True,
             'progress_hooks': [self.__upload_to_s3_hook]
         }
         logging.info("Starting video download")
