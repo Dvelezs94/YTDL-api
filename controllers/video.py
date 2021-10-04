@@ -33,6 +33,7 @@ class Video():
 
     def create_video(self, video_url: str):
         self.__get_video_metadata(video_url)
+        logging.info(self.__video_metadata)
         mp3_link = self.__get_video_s3_url()
         existing_video = self.get_video_by_id(video_id=self.__video_metadata['id'])
         if not existing_video:
@@ -124,9 +125,13 @@ class Video():
         # upload video once it has finished downloading
         if vid['status'] == 'finished':
             logging.critical(f"Uploading {vid['filename']} to S3")
-            s3 = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
+            if os.getenv('AWS_ACCESS_KEY'):
+                s3 = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
                       aws_secret_access_key=os.getenv('AWS_SECRETS_KEY'), 
                       region_name=os.getenv('AWS_REGION'))
+            else:
+                s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
+
             try:
                 s3.upload_file(vid['filename'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['id']}.mp3")
                 logging.info(f"{vid['filename']} Upload Successful")

@@ -5,18 +5,11 @@ from core.Initializer import db_inst
 import SQLmodels as SQLmodels
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-from mangum import Mangum
 import logging
 
-stage = os.environ.get('STAGE', None)
-openapi_prefix = f"/{stage}" if stage else "/"
-
-app = FastAPI(title="YTDL", openapi_prefix=openapi_prefix)
-
-video_db = Video()
+app = FastAPI(title="YTDL")
 
 # CORS config
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,6 +17,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+video_db = Video()
 
 logging.basicConfig(level=logging.DEBUG)
 # Run "migrations"

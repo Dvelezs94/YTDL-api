@@ -20,5 +20,3 @@ urllib3==1.26.7
 uvicorn==0.15.0
 youtube-dl==2021.6.6
 zipp==3.6.0
-werkzeug==1.0.1
-mangum==0.11.0
