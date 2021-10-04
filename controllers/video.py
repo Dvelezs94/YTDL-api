@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import logging
 import cgi
 import os
@@ -11,6 +12,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from fastapi import HTTPException
 from botocore.exceptions import NoCredentialsError
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -109,17 +111,22 @@ class Video():
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '192',
+                'preferredquality': '128',
             }],
+            'postprocessor_args': [
+            '   -ar', '16000'
+            ],
+            'prefer_ffmpeg': True,
             'restrictfilenames': True,
-            'progress_hooks': [self.__upload_to_s3_hook],
+            'progress_hooks': [self.__upload_to_s3_hook]
         }
+        logging.info("Starting video download")
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            if not self.__video_metadata['duration'] >= 600: # this means video is over 10 mins long
+            if not self.__video_metadata['duration'] >= 1800: # this means video is over 10 mins long
                 ydl.download([video_url])
                 return True
             else:
-                raise HTTPException(status_code=500, detail="Video is over 10 minutes long")
+                raise HTTPException(status_code=500, detail="Video is over 30 minutes long")
 
     def __upload_to_s3_hook(self, vid):
         # upload video once it has finished downloading
@@ -133,7 +140,7 @@ class Video():
                 s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
 
             try:
-                s3.upload_file(vid['filename'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['id']}.mp3")
+                s3.upload_file(vid['filename'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['id']}.mp3", ExtraArgs={'ACL':'public-read'})
                 logging.info(f"{vid['filename']} Upload Successful")
                 return True
             except FileNotFoundError:
