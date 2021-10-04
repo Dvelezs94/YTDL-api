@@ -5,6 +5,7 @@ import os
 import glob2
 import youtube_dl
 import boto3
+import re
 import SQLmodels as SQLmodels
 from sqlalchemy import exc
 from datetime import datetime
@@ -99,7 +100,8 @@ class Video():
                 self.__video_metadata = {
                     'id': meta['id'],
                     'duration': meta['duration'],
-                    'title': meta['title']
+                    'title': meta['title'],
+                    'formatted_title': re.sub('[^a-zA-Z0-9 \n\.]', '', meta['title'])
                 }
                 return True
         except:
@@ -107,12 +109,14 @@ class Video():
 
     def __download_video_as_mp3(self, video_url: str):
         tmp_dir=f"/tmp/{self.__video_metadata['id']}"
-        os.mkdir(tmp_dir)
+        if not os.path.isdir(tmp_dir):
+            os.mkdir(tmp_dir)
         logging.info("Starting video download")
         try: 
             if not self.__video_metadata['duration'] >= 1800: # this means video is over 10 mins long
                 stream = os.popen(f"youtube2mp3 -y '{video_url}' -d {tmp_dir}")
                 stream.read()
+                logging.info("=== Download and transcode finished")
                 self.__video_metadata['file_path'] = glob2.glob(f"{tmp_dir}/*.mp3")[0]
                 self.__upload_to_s3()
                 return True
@@ -131,7 +135,8 @@ class Video():
             s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION'))
 
         try:
-            s3.upload_file(self.__video_metadata['file_path'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['filename']}.mp3", ExtraArgs={'ACL':'public-read'})
+            logging.info(self.__video_metadata)
+            s3.upload_file(self.__video_metadata['file_path'], os.getenv('AWS_S3_BUCKET'), f"{self.__video_metadata['formatted_title']}.mp3", ExtraArgs={'ACL':'public-read'})
             logging.info(f"{self.__video_metadata['id']} Upload Successful")
             return True
         except FileNotFoundError:
@@ -140,7 +145,10 @@ class Video():
         except NoCredentialsError:
             logging.error("AWS Credentials not found")
             raise HTTPException(status_code=500, detail="Internal Server Error")
+        except Exception as e:
+            logging.critical(f"=== Could not upload to s3 due to: {e}")
+            raise HTTPException(status_code=500, detail="Error while uploading video")
     
     def __get_video_s3_url(self):
         # return link for video download on s3/cdn
-        return f"https://{os.getenv('AWS_S3_BUCKET')}.s3.amazonaws.com/{self.__video_metadata['id']}.mp3"
+        return f"https://{os.getenv('AWS_S3_BUCKET')}.s3.amazonaws.com/{self.__video_metadata['formatted_title']}.mp3"
